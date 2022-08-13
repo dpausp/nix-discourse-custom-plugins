@@ -181,7 +181,7 @@ def update_plugins(
         {"name": "discourse-restricted-replies"},
         {"name": "discourse-rss-polling"},
         {"name": "discourse-shared-edits"},
-        {"name": "discourse-topic-previews", "owner": "merefield"},
+        {"name": "discourse-topic-previews-sidecar", "owner": "paviliondev"},
         {"name": "discourse-landing-pages", "owner": "paviliondev"},
         {"name": "discourse-user-card-badges"},
         {"name": "discourse-translator", "owner": "LibreTranslate"},

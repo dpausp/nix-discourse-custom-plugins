@@ -1,0 +1,21 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    color (1.8)
+    colorscore (0.0.5)
+      color
+    prizm (0.0.3)
+      rmagick
+    rmagick (4.2.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  color (= 1.8)
+  colorscore (= 0.0.5)
+  prizm (= 0.0.3)
+  rmagick (= 4.2.2)
+
+BUNDLED WITH
+   2.3.9

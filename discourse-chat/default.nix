@@ -5,8 +5,8 @@ mkDiscoursePlugin {
   src = fetchFromGitHub {
     owner = "discourse";
     repo = "discourse-chat";
-    rev = "2256d4a85f88355ad7774ff43343af788727be8d";
-    hash = "sha256-BqqbdYy9OBGe9Dka13s11xZfSKDjnXatl7t3+nFVi6E";
+    rev = "ff1b065b7b0f8f2d47ecaa8c61bc3545c136467b";
+    hash = "sha256-2jEgvDrN7Yrt4hjXCcX4XMiVyfYMkhTHeW3R9TjZjDE==";
 
   };
   meta = with lib; {
