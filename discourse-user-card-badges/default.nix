@@ -5,8 +5,8 @@ mkDiscoursePlugin {
   src = fetchFromGitHub {
     owner = "discourse";
     repo = "discourse-user-card-badges";
-    rev = "da698e662a81f327247a904760eb84dd4ade7f9d";
-    sha256 = "sha256-1ySGTj0+Hnf5SOyktKFzZkEVb9jMd8g7rtNpysDHfy8==";
+    rev = "bb654a96da7dcdb0af4fa1dcf21274f991bd8862";
+    sha256 = "sha256-/OwPCFayAqiDgwwfgB8iI+GuJHsGphhWXneK1/2JPgM===";
   };
   meta = with lib; {
     homepage = "";

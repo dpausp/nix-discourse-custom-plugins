@@ -176,7 +176,6 @@ def update_plugins(
 ):
     """Update plugins to their latest revision."""
     plugins = [
-        {"name": "discourse-chat"},
         {"name": "discourse-question-answer"},
         {"name": "discourse-restricted-replies"},
         {"name": "discourse-rss-polling"},

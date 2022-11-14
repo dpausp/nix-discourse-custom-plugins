@@ -3,7 +3,6 @@ let
   callPackage = newScope args;
 in
 {
-  discourse-chat = callPackage ./discourse-chat {};
   discourse-landing-pages = callPackage ./discourse-landing-pages {};
   discourse-question-answer = callPackage ./discourse-question-answer {};
   discourse-restricted-replies = callPackage ./discourse-restricted-replies {};
