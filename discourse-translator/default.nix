@@ -2,11 +2,12 @@
 
 mkDiscoursePlugin {
   name = "discourse-translator";
+  bundlerEnvArgs.gemdir = ./.;
   src = fetchFromGitHub {
     owner = "LibreTranslate";
     repo = "discourse-translator";
-    rev = "82ab052c8bc71ed33d4caf2b9ac87b3b101699b1";
-    sha256 = "1d8b5f1crm7lddh6g0d2qxik70vk5alyzzkymvjn9sq9zf440v5w";
+    rev = "fdeb9a0de2b00d205959ba553df56c48d4cec73a";
+    sha256 = "sha256-H50jFXiUj6bolR3HXK0BUjH9U06xAx/ZNewUG+SwroE=";
   };
   meta = with lib; {
     homepage = "";
