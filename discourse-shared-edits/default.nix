@@ -5,8 +5,8 @@ mkDiscoursePlugin {
   src = fetchFromGitHub {
     owner = "discourse";
     repo = "discourse-shared-edits";
-    rev = "f1e37e49dfdf550a3fd5237ba71f6375d0d3e0ea";
-    sha256 = "sha256-bZp4IWQHzMRk8oXU7jjY5sQHrqjxsc6KHl0TZoeQ7rM=====";
+    rev = "5e83a76c5e2fa83454895f2fe1e45c453d7f27f5";
+    sha256 = "sha256-IpM5eVT3EQkM3zEPDvRwEJUpVbFdy1WZ+6YsmPwO/jo======";
   };
   meta = with lib; {
     homepage = "";
