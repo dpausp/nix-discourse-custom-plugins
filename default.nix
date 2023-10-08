@@ -11,4 +11,5 @@ in
   discourse-topic-previews-sidecar = callPackage ./discourse-topic-previews-sidecar {};
   discourse-translator = callPackage ./discourse-translator {};
   discourse-user-card-badges = callPackage ./discourse-user-card-badges {};
+  discourse-events = callPackage ./discourse-events {};
 }

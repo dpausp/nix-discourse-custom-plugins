@@ -176,6 +176,7 @@ def update_plugins(
 ):
     """Update plugins to their latest revision."""
     plugins = [
+        {"name": "discourse-events", "owner": "paviliondev"},
         {"name": "discourse-landing-pages", "owner": "paviliondev"},
         {"name": "discourse-question-answer"},
         {"name": "discourse-restricted-replies"},
