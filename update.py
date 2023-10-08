@@ -190,6 +190,7 @@ def update_plugins(
         echo("Only showing what would be done (--pretend is set):")
 
     for plugin in plugins:
+        echo(f"Checking plugin {plugin}...")
         fetcher = plugin.get("fetcher") or "fetchFromGitHub"
         owner = plugin.get("owner") or "discourse"
         name = plugin.get("name")
@@ -205,15 +206,20 @@ def update_plugins(
             compatibility_spec = repo.get_file(
                 ".discourse-compatibility", repo.latest_commit_sha
             )
-            versions = [
-                (
+            versions = []
+            for line in compatibility_spec.splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    discourse_version_str, plugin_rev = line.split(":")
+                except ValueError:
+                    print(f"ERROR, cannot split line: {line}")
+                    continue
+                versions.append([
                     DiscourseVersion(discourse_version_str),
-                    plugin_rev.strip(" "),
-                )
-                for [discourse_version_str, plugin_rev] in [
-                    line.split(":") for line in compatibility_spec.splitlines()
-                ]
-            ]
+                    plugin_rev.strip()
+                ])
+
             discourse_version = DiscourseVersion(version)
             versions = list(
                 filter(lambda ver: ver[0] >= discourse_version, versions)
