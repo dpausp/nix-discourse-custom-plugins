@@ -176,14 +176,14 @@ def update_plugins(
 ):
     """Update plugins to their latest revision."""
     plugins = [
+        {"name": "discourse-landing-pages", "owner": "paviliondev"},
         {"name": "discourse-question-answer"},
         {"name": "discourse-restricted-replies"},
         {"name": "discourse-rss-polling"},
         {"name": "discourse-shared-edits"},
         {"name": "discourse-topic-previews-sidecar", "owner": "paviliondev"},
-        {"name": "discourse-landing-pages", "owner": "paviliondev"},
-        {"name": "discourse-user-card-badges"},
         {"name": "discourse-translator", "owner": "LibreTranslate"},
+        {"name": "discourse-user-card-badges"},
     ]
 
     if pretend:
