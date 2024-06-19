@@ -183,7 +183,7 @@ def update_plugins(
         {"name": "discourse-rss-polling"},
         {"name": "discourse-shared-edits"},
         {"name": "discourse-topic-previews-sidecar", "owner": "paviliondev"},
-        {"name": "discourse-translator", "owner": "LibreTranslate"},
+        {"name": "discourse-translator"},
         {"name": "discourse-user-card-badges"},
     ]
 

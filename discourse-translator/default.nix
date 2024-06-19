@@ -4,10 +4,10 @@ mkDiscoursePlugin {
   name = "discourse-translator";
   bundlerEnvArgs.gemdir = ./.;
   src = fetchFromGitHub {
-    owner = "LibreTranslate";
+    owner = "discourse";
     repo = "discourse-translator";
-    rev = "fdeb9a0de2b00d205959ba553df56c48d4cec73a";
-    sha256 = "sha256-H50jFXiUj6bolR3HXK0BUjH9U06xAx/ZNewUG+SwroE=";
+    rev = "6750e10a6d9dfd3fc2c9a0cac5a83aca1a8ee401";
+    sha256 = "sha256-/Yh/NvHxKi54pbOdh+k7QdBL7+Mp3N4WSS9VhpLGczo==";
   };
   meta = with lib; {
     homepage = "";
