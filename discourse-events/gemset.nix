@@ -5,40 +5,40 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0irbdwkkjwzajq1ip6ba46q49sxnrl2cw7ddkdhsfhb6aprnm3vr";
+      sha256 = "0cl2qpvwiffym62z991ynks7imsm87qmgxf0yfsmlwzkgi9qcaa6";
       type = "gem";
     };
-    version = "2.8.6";
+    version = "2.8.7";
   };
   concurrent-ruby = {
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0skwdasxq7mnlcccn6aqabl7n9r3jd7k19ryzlzzip64cn4x572g";
+      sha256 = "0chwfdq2a6kbj6xz9l6zrdfnyghnh32si82la1dnpa5h75ir5anl";
       type = "gem";
     };
-    version = "1.3.3";
+    version = "1.3.4";
   };
   date = {
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "149jknsq999gnhy865n33fkk22s0r447k76x9pmcnnwldfv2q7wp";
+      sha256 = "04d7l3xdmkybrd20gayf8s38pgfld0hf8m726lz9np32xnnsszrf";
       type = "gem";
     };
-    version = "3.3.4";
+    version = "3.4.0";
   };
   excon = {
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1m3gzvp1wqki0yh4b7761qhdy4pyr4phy429b7s9w25nrkhp4lsz";
+      sha256 = "1ra8msr3flnx7z1b99jpxivy8xygp2azh02nm20m5ld8fsm3hvyg";
       type = "gem";
     };
-    version = "0.110.0";
+    version = "1.2.0";
   };
   hashie = {
     groups = ["default"];
@@ -98,10 +98,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0imd8nbqx0c0jnypdrmn1ay935jjdd7ylg18c1fhz13ci26r4ps9";
+      sha256 = "046ai8k851flnb69d2mlsk89ripr0iirpzb19vb2fr3a3fs3rlla";
       type = "gem";
     };
-    version = "0.1.0.pre3";
+    version = "0.1.0.pre7";
   };
   omnievent-api = {
     dependencies = ["excon" "omnievent"];
@@ -109,10 +109,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0i8r8pmq0kcjyw4m337rdk0lg1xj0fda455wppks4m82chv1220i";
+      sha256 = "1a87wybyif1z8nb5hirzgfph7m81igzqfvy2bh3mg1hfw6y6j6xr";
       type = "gem";
     };
-    version = "0.1.0.pre2";
+    version = "0.1.0.pre4";
   };
   omnievent-eventbrite = {
     dependencies = ["omnievent" "omnievent-api"];
@@ -136,6 +136,17 @@
     };
     version = "0.1.0.pre2";
   };
+  omnievent-google = {
+    dependencies = ["omnievent" "omnievent-api"];
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "015zh7jhs9y4a2h9rj2v9w0790z31h96qm0wdacxcr38nl5q8cbk";
+      type = "gem";
+    };
+    version = "0.1.0.pre4";
+  };
   omnievent-icalendar = {
     dependencies = ["addressable" "icalendar" "icalendar-recurrence" "omnievent"];
     groups = ["default"];
@@ -158,25 +169,36 @@
     };
     version = "0.1.0.pre1";
   };
+  omnievent-outlook = {
+    dependencies = ["omnievent" "omnievent-api"];
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "075qmpkppzpja43wjdjr4clbc3jqwrw42j8hf66a6wngq4ynrp5y";
+      type = "gem";
+    };
+    version = "0.1.0.pre7";
+  };
   public_suffix = {
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1vb6f3v8q9m67xmbdl4vbmxis53a7igci4blg561jdfp613cf3i5";
+      sha256 = "0vqcw3iwby3yc6avs1vb3gfd0vcp2v7q310665dvxfswmcf4xm31";
       type = "gem";
     };
-    version = "5.1.1";
+    version = "6.0.1";
   };
   stringio = {
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0ix96dxbjqlpymdigb4diwrifr0bq7qhsrng95fkkp18av326nqk";
+      sha256 = "07mfqb40b2wh53k33h91zva78f9zwcdnl85jiq74wnaw2wa6wiak";
       type = "gem";
     };
-    version = "3.0.8";
+    version = "3.1.1";
   };
   time = {
     dependencies = ["date"];
@@ -184,10 +206,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1p8aplbgzmfbaax9aky9wypavj1y8gx4ml468nz7js0dg867d25k";
+      sha256 = "13pzdsgf3v06mymzipcpa7p80shyw328ybn775nzpnhc6n8y9g30";
       type = "gem";
     };
-    version = "0.2.0";
+    version = "0.2.2";
   };
   tzinfo = {
     dependencies = ["concurrent-ruby"];
