@@ -9,6 +9,7 @@ in
   discourse-rss-polling = callPackage ./discourse-rss-polling {};
   discourse-shared-edits = callPackage ./discourse-shared-edits {};
   discourse-topic-previews-sidecar = callPackage ./discourse-topic-previews-sidecar {};
+  discourse-templates = callPackage ./discourse-templates {};
   discourse-translator = callPackage ./discourse-translator {};
   discourse-user-card-badges = callPackage ./discourse-user-card-badges {};
   discourse-events = callPackage ./discourse-events {};

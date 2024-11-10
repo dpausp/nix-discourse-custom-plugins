@@ -62,7 +62,7 @@ class DiscourseVersion:
         release version.
 
         """
-        for (this_ver, other_ver) in zip_longest(
+        for this_ver, other_ver in zip_longest(
             self.split_version, other.split_version
         ):
             if this_ver == other_ver:
@@ -182,6 +182,7 @@ def update_plugins(
         {"name": "discourse-restricted-replies"},
         {"name": "discourse-rss-polling"},
         {"name": "discourse-shared-edits"},
+        {"name": "discourse-templates"},
         {"name": "discourse-topic-previews-sidecar", "owner": "paviliondev"},
         {"name": "discourse-translator"},
         {"name": "discourse-user-card-badges"},
@@ -216,10 +217,12 @@ def update_plugins(
                 except ValueError:
                     print(f"ERROR, cannot split line: {line}")
                     continue
-                versions.append([
-                    DiscourseVersion(discourse_version_str),
-                    plugin_rev.strip()
-                ])
+                versions.append(
+                    [
+                        DiscourseVersion(discourse_version_str),
+                        plugin_rev.strip(),
+                    ]
+                )
 
             discourse_version = DiscourseVersion(version)
             versions = list(
@@ -276,9 +279,7 @@ def update_plugins(
                     )
                 )
 
-            all_plugins_filename = (
-                Path(__file__).parent / "default.nix"
-            )
+            all_plugins_filename = Path(__file__).parent / "default.nix"
             with open(all_plugins_filename, "r+") as f:
                 content = f.read()
                 pos = -1
@@ -353,7 +354,9 @@ def update_plugins(
         gemfile_text = ""
         for line in repo.get_file("plugin.rb", rev).splitlines():
             if "gem " in line:
-                line = ','.join(filter(lambda x: "require_name" not in x, line.split(',')))
+                line = ",".join(
+                    filter(lambda x: "require_name" not in x, line.split(","))
+                )
                 gemfile_text = gemfile_text + line + os.linesep
 
                 version_file_match = version_file_regex.match(line)
