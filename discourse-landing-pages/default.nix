@@ -6,8 +6,8 @@ mkDiscoursePlugin {
   src = fetchFromGitHub {
     owner = "paviliondev";
     repo = "discourse-landing-pages";
-    rev = "2f20e3b1a1f444b7f3e5e747322aecc449907fb0";
-    sha256 = "sha256-IuCfBVDhIGTJJtJMPElcJnnBG7vH/HR0Xr+oFfRpt0s====";
+    rev = "8fee9ea6a44d511fea5b057b354701ee09db6472";
+    sha256 = "sha256-gspdzfbsQF+YKgy2rKaRFccv8zbeKEzhUHGchhTFooQ=====";
   };
   meta = with lib; {
     homepage = "";
