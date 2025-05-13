@@ -2,6 +2,7 @@
 #! nix-shell -i python3 -p bundix bundler nix-update nix-universal-prefetch python3 python3Packages.requests python3Packages.typer python3Packages.click-log prefetch-yarn-deps
 from __future__ import annotations
 
+import ast
 import logging
 import os
 import re
@@ -13,7 +14,7 @@ from distutils.version import LooseVersion
 from functools import total_ordering
 from itertools import zip_longest
 from pathlib import Path
-from typing import Union, Iterable
+from typing import Annotated, Union, Iterable
 
 import click_log
 from typer import Typer, Option, echo
@@ -173,7 +174,14 @@ def update_plugins(
         False,
         help="Only show what would be done.",
     ),
+    plugin_version_overrides: Annotated[str, Option()] = "{}",
 ):
+    from pprint import pprint
+
+    pprint(plugin_version_overrides)
+
+    overridden_plugin_versions = ast.literal_eval(plugin_version_overrides)
+
     """Update plugins to their latest revision."""
     plugins = [
         {"name": "discourse-events", "owner": "paviliondev"},
@@ -204,36 +212,42 @@ def update_plugins(
         # https://meta.discourse.org/t/pinning-plugin-and-theme-versions-for-older-discourse-installs/156971
         # this makes sure we don't upgrade plugins to revisions that
         # are incompatible with the packaged Discourse version
-        try:
-            compatibility_spec = repo.get_file(
-                ".discourse-compatibility", repo.latest_commit_sha
-            )
-            versions = []
-            for line in compatibility_spec.splitlines():
-                if not line.strip():
-                    continue
-                try:
-                    discourse_version_str, plugin_rev = line.split(":")
-                except ValueError:
-                    print(f"ERROR, cannot split line: {line}")
-                    continue
-                versions.append(
-                    [
-                        DiscourseVersion(discourse_version_str),
-                        plugin_rev.strip(),
-                    ]
-                )
+        rev = overridden_plugin_versions.get(name)
 
-            discourse_version = DiscourseVersion(version)
-            versions = list(
-                filter(lambda ver: ver[0] >= discourse_version, versions)
-            )
-            if not versions:
+        if rev is None:
+            try:
+                compatibility_spec = repo.get_file(
+                    ".discourse-compatibility", repo.latest_commit_sha
+                )
+                versions = []
+                for line in compatibility_spec.splitlines():
+                    if not line.strip():
+                        continue
+                    try:
+                        discourse_version_str, plugin_rev = line.split(":")
+                    except ValueError:
+                        print(f"ERROR, cannot split line: {line}")
+                        continue
+                    versions.append(
+                        [
+                            DiscourseVersion(discourse_version_str),
+                            plugin_rev.strip(),
+                        ]
+                    )
+
+                discourse_version = DiscourseVersion(version)
+
+                versions = list(
+                    filter(lambda ver: ver[0] >= discourse_version, versions)
+                )
+                if not versions:
+                    rev = repo.latest_commit_sha
+                else:
+                    rev = versions[0][1]
+            except requests.exceptions.HTTPError:
                 rev = repo.latest_commit_sha
-            else:
-                rev = versions[0][1]
-        except requests.exceptions.HTTPError:
-            rev = repo.latest_commit_sha
+
+        print(f"Using revision {rev} for plugin {name}")
 
         filename = Path(__file__).parent / name / "default.nix"
 
