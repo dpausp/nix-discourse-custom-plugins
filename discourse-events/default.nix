@@ -6,8 +6,8 @@ bundlerEnvArgs.gemdir = ./.;
 src = fetchFromGitHub {
     owner = "paviliondev";
     repo = "discourse-events";
-    rev = "b38f3258115110c07951f18e2c3562ac3e68a301";
-    sha256 = "sha256-sbGTtZpAlvfRBRpKm5CFLGa5c2xvTLpUQFMj3Sr6CEg====";
+    rev = "80f1a9ed14232599ff78cd57dc3ead3dd6f2aab6";
+    sha256 = "sha256-vlsKvwjEMbgDJUPea1KSro/m8ebzDDjfRy5OHqHcGyE=====";
 };
 meta = with lib; {
     homepage = "";
