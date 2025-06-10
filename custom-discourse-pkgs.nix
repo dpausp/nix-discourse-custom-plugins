@@ -1,8 +1,4 @@
 { pkgs, plugins ? {} }:
-let
-  customPlugins = pkgs.callPackage ./. { inherit (pkgs.discourse) mkDiscoursePlugin; };
-in
-with customPlugins;
 {
   nixosDiscourse = pkgs.discourse.override {
     plugins = (with pkgs.discourse.plugins; [
@@ -21,10 +17,10 @@ with customPlugins;
       discourse-voting
       discourse-yearly-review
     ])
-    ++ [
-      plugins.discourse-events 
-      plugins.discourse-templates
-    ];
+    ++ (with plugins; [
+      discourse-events
+      discourse-templates
+    ]);
   };
 
   bigDiscourse = pkgs.discourse.override {
