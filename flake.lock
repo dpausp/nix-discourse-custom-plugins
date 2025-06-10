@@ -1,0 +1,27 @@
+{
+  "nodes": {
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1747329998,
+        "narHash": "sha256-KQbVGhAq4Xfbl/Orr2FK3UB+eOWzQWKCqkpEzgVZqWU=",
+        "owner": "flyingcircusio",
+        "repo": "nixpkgs",
+        "rev": "d431bef2ec3825d1f61674b0c9cdde5e29641cc2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "flyingcircusio",
+        "repo": "nixpkgs",
+        "rev": "d431bef2ec3825d1f61674b0c9cdde5e29641cc2",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

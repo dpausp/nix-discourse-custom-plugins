@@ -1,6 +1,5 @@
+{ pkgs }:
 let
-  flakeRef = "github:flyingcircusio/nixpkgs/d431bef2ec3825d1f61674b0c9cdde5e29641cc2";
-  pkgs = import (builtins.getFlake flakeRef) {};
   customPlugins = pkgs.callPackage ./. { inherit (pkgs.discourse) mkDiscoursePlugin; };
 in
 with customPlugins;
