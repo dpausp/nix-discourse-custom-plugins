@@ -1,4 +1,4 @@
-{ pkgs }:
+{ pkgs, plugins ? {} }:
 let
   customPlugins = pkgs.callPackage ./. { inherit (pkgs.discourse) mkDiscoursePlugin; };
 in
