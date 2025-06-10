@@ -223,23 +223,37 @@ def update_plugins(
                 for line in compatibility_spec.splitlines():
                     if not line.strip():
                         continue
-                    try:
-                        discourse_version_str, plugin_rev = line.split(":")
-                    except ValueError:
-                        print(f"ERROR, cannot split line: {line}")
-                        continue
+                    # Split into operator+version and revision
+                    operator_part, plugin_rev = line.split(":", 1)
+                    plugin_rev = plugin_rev.strip()
+                    
+                    # Parse operator and version (default to <= if no operator)
+                    if operator_part.startswith("<="):
+                        op = "<="
+                        discourse_version_str = operator_part[2:].strip()
+                    elif operator_part.startswith("<"):
+                        op = "<"
+                        discourse_version_str = operator_part[1:].strip()
+                    else:  # legacy format
+                        op = "<="
+                        discourse_version_str = operator_part.strip()
+
                     versions.append(
-                        [
-                            DiscourseVersion(discourse_version_str),
-                            plugin_rev.strip(),
-                        ]
+                        (op, DiscourseVersion(discourse_version_str), plugin_rev)
                     )
 
                 discourse_version = DiscourseVersion(version)
-
-                versions = list(
-                    filter(lambda ver: ver[0] >= discourse_version, versions)
-                )
+                
+                # Filter versions where the discourse_version satisfies the constraint
+                compatible_versions = []
+                for op, spec_version, rev in versions:
+                    if op == "<" and discourse_version < spec_version:
+                        compatible_versions.append((spec_version, rev))
+                    elif op == "<=" and discourse_version <= spec_version:
+                        compatible_versions.append((spec_version, rev))
+                
+                # Get highest compatible version
+                compatible_versions.sort(reverse=True, key=lambda x: x[0])
                 if not versions:
                     rev = repo.latest_commit_sha
                 else:
