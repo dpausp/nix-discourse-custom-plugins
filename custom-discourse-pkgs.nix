@@ -22,9 +22,9 @@ with customPlugins;
       discourse-yearly-review
     ])
     ++ [
-      plugins.discourse-events
+      plugins.discourse-events 
       plugins.discourse-templates
-    ]);
+    ];
   };
 
   bigDiscourse = pkgs.discourse.override {
