@@ -35,6 +35,11 @@
             discourse-user-card-badges = pluginPkgs.discourse-user-card-badges;
           };
         });
+
+      # Hydra CI jobs
+      hydraJobs = forAllSystems (system: {
+        nixosDiscourse = self.packages.${system}.nixosDiscourse;
+      });
       
       # Default package for `nix build`
       defaultPackage = forAllSystems (system: self.packages.${system}.nixosDiscourse);
