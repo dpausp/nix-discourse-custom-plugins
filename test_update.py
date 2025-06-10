@@ -1,3 +1,7 @@
+#!/usr/bin/env nix-shell
+#! nix-shell -i python3 -p python3 python3Packages.requests python3Packages.coverage
+#! nix-shell -I nixpkgs=channel:nixos-unstable
+
 import unittest
 from unittest.mock import patch
 from update import DiscourseVersion, DiscourseRepo
