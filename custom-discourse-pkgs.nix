@@ -21,9 +21,9 @@ with customPlugins;
       discourse-voting
       discourse-yearly-review
     ])
-    ++ (with customPlugins; [
-      discourse-events
-      discourse-templates
+    ++ [
+      plugins.discourse-events
+      plugins.discourse-templates
     ]);
   };
 
@@ -44,7 +44,7 @@ with customPlugins;
       discourse-voting
       discourse-yearly-review
     ])
-    ++ (with customPlugins; [
+    ++ (with plugins; [
       discourse-events
       discourse-landing-pages
       discourse-question-answer
