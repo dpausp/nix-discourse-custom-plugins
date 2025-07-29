@@ -11,37 +11,58 @@
       packages = forAllSystems (system: 
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          custom-pkgs = import ./custom-discourse-pkgs.nix {
-            inherit pkgs;
-            plugins = self.packages.${system}.plugins;
-          };
-        in {
-          nixosDiscourse = custom-pkgs.nixosDiscourse;
-          bigDiscourse = custom-pkgs.bigDiscourse;
           
-          plugins = let
-            pluginPkgs = import ./. {
-              inherit (pkgs.discourse) mkDiscoursePlugin;
-              inherit (pkgs) fetchFromGitHub newScope;
-            };
-          in {
-            discourse-events = pluginPkgs.discourse-events;
-            discourse-landing-pages = pluginPkgs.discourse-landing-pages;
-            discourse-question-answer = pluginPkgs.discourse-question-answer;
-            discourse-restricted-replies = pluginPkgs.discourse-restricted-replies;
-            discourse-shared-edits = pluginPkgs.discourse-shared-edits;
-            discourse-templates = pluginPkgs.discourse-templates;
-            discourse-topic-previews-sidecar = pluginPkgs.discourse-topic-previews-sidecar;
-            discourse-user-card-badges = pluginPkgs.discourse-user-card-badges;
+          # Import our custom plugins
+          customPlugins = import ./. {
+            inherit (pkgs.discourse) mkDiscoursePlugin;
+            inherit (pkgs) fetchFromGitHub newScope;
           };
-        });
+          
+          # Single unified Discourse package with all plugins
+          discourse = pkgs.discourse.override {
+            plugins = (with pkgs.discourse.plugins; [
+              # Official nixpkgs plugins
+              discourse-assign
+              discourse-bbcode-color
+              discourse-calendar
+              discourse-chat-integration
+              discourse-data-explorer
+              discourse-docs
+              discourse-github
+              discourse-math
+              discourse-openid-connect
+              discourse-prometheus
+              discourse-saved-searches
+              discourse-solved
+              discourse-voting
+              discourse-yearly-review
+            ]) ++ (with customPlugins; [
+              # Our custom plugins
+              discourse-events
+              discourse-landing-pages
+              discourse-question-answer
+              discourse-restricted-replies
+              discourse-shared-edits
+              discourse-templates
+              discourse-topic-previews-sidecar
+              discourse-user-card-badges
+            ]);
+          };
+          
+        in {
+          # Main package - single Discourse with all plugins
+          default = discourse;
+          
+          # Alias for backwards compatibility
+          nixosDiscourse = discourse;
+        } // customPlugins);
 
       # Hydra CI jobs
       hydraJobs = forAllSystems (system: {
-        nixosDiscourse = self.packages.${system}.nixosDiscourse;
+        discourse = self.packages.${system}.default;
       });
       
       # Default package for `nix build`
-      defaultPackage = forAllSystems (system: self.packages.${system}.nixosDiscourse);
+      defaultPackage = forAllSystems (system: self.packages.${system}.default);
     };
 }
