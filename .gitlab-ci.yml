@@ -1,0 +1,105 @@
+stages:
+  - renovate
+  - update
+  - test
+
+variables:
+  # Use the official Renovate image
+  RENOVATE_IMAGE: "renovate/renovate:37"
+  # Nix image for our custom update scripts
+  NIX_IMAGE: "nixos/nix:2.18"
+
+# Renovate job that runs daily
+renovate:
+  stage: renovate
+  image: $RENOVATE_IMAGE
+  rules:
+    # Run daily at 6 AM UTC
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    # Also allow manual triggers
+    - if: $CI_PIPELINE_SOURCE == "web"
+    # Run on main branch pushes to renovate.json changes
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - renovate.json
+        - .gitlab-ci.yml
+  script:
+    - echo "Running Renovate..."
+    - renovate
+  variables:
+    # GitLab token for creating MRs
+    RENOVATE_TOKEN: $GITLAB_TOKEN
+    # Platform configuration
+    RENOVATE_PLATFORM: gitlab
+    RENOVATE_ENDPOINT: $CI_SERVER_URL/api/v4/
+    # Repository configuration
+    RENOVATE_GIT_AUTHOR: "Renovate Bot <renovate@gitlab.com>"
+    # Logging
+    LOG_LEVEL: info
+  artifacts:
+    reports:
+      # Store Renovate logs
+      junit: renovate-report.xml
+    paths:
+      - renovate.log
+    expire_in: 1 week
+    when: always
+
+# Custom update job using our enhanced scripts
+discourse-update:
+  stage: update
+  image: $NIX_IMAGE
+  rules:
+    # Run when Renovate creates MRs or on manual trigger
+    - if: $CI_MERGE_REQUEST_TITLE =~ /^Update.*discourse/i
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - discourse_version
+        - "*/default.nix"
+        - update.py
+        - update_discourse_hub.py
+  before_script:
+    # Enable experimental features for flakes
+    - mkdir -p ~/.config/nix
+    - echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+    # Install required Python packages
+    - nix-shell -p python3 python3Packages.requests python3Packages.click python3Packages.packaging --run "echo 'Python environment ready'"
+  script:
+    - echo "Checking Discourse Hub API for updates..."
+    - ./update_discourse_hub.py --check-only
+    - echo "Running plugin updates..."
+    - ./update.py --pretend
+    - echo "Testing build..."
+    - nix build .#default
+  artifacts:
+    paths:
+      - update-report.json
+      - discourse_version
+    expire_in: 1 week
+    when: always
+
+# Test job to validate changes
+test-build:
+  stage: test
+  image: $NIX_IMAGE
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  before_script:
+    - mkdir -p ~/.config/nix
+    - echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+  script:
+    - echo "Testing all packages build correctly..."
+    - nix flake check
+    - nix build .#default
+    # Test individual plugins for development
+    - |
+      for plugin in discourse-events discourse-landing-pages discourse-question-answer discourse-restricted-replies discourse-shared-edits discourse-templates discourse-topic-previews-sidecar discourse-user-card-badges; do
+        echo "Testing plugin: $plugin"
+        nix build .#$plugin
+      done
+  artifacts:
+    reports:
+      junit: test-results.xml
+    when: always

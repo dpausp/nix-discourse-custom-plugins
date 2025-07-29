@@ -1,0 +1,94 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separatePatchReleases"
+  ],
+  "timezone": "UTC",
+  "schedule": ["before 8am every weekday"],
+  "labels": ["dependencies", "renovate"],
+  "assignees": ["@me"],
+  "reviewers": ["@me"],
+  "platformAutomerge": false,
+  "rebaseWhen": "conflicted",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 8am on monday"]
+  },
+  "packageRules": [
+    {
+      "description": "Discourse core updates - use our custom script",
+      "matchFileNames": ["discourse_version"],
+      "matchPackageNames": ["discourse"],
+      "enabled": false,
+      "customChangelogUrl": "https://meta.discourse.org/c/announcements/67"
+    },
+    {
+      "description": "Nix flake inputs - auto-update nixpkgs to trigger rebuilds",
+      "matchFileNames": ["flake.lock"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": false,
+      "schedule": ["before 8am on monday"],
+      "labels": ["nixpkgs-update", "rebuild-required"],
+      "commitMessagePrefix": "nixpkgs: ",
+      "prTitle": "Update nixpkgs (triggers Discourse rebuild)"
+    },
+    {
+      "description": "Major nixpkgs updates - handle carefully",
+      "matchFileNames": ["flake.lock"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "schedule": ["before 8am on monday"],
+      "labels": ["nixpkgs-update", "major-update", "manual-review"],
+      "commitMessagePrefix": "nixpkgs(major): ",
+      "prTitle": "Major nixpkgs update - requires review"
+    },
+    {
+      "description": "Plugin updates - handle via custom scripts",
+      "matchFileNames": ["*/default.nix"],
+      "matchPackageNames": ["discourse-*"],
+      "enabled": false
+    },
+    {
+      "description": "Ruby dependencies in plugins",
+      "matchFileNames": ["*/Gemfile.lock", "*/gemset.nix"],
+      "matchManagers": ["bundler"],
+      "schedule": ["before 8am on monday"],
+      "groupName": "Ruby dependencies",
+      "labels": ["ruby-deps"]
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update Discourse version file",
+      "fileMatch": ["^discourse_version$"],
+      "matchStrings": ["^(?<currentValue>\\d+\\.\\d+\\.\\d+(?:\\.beta\\d+)?)\\s*$"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "discourse/discourse",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex", 
+      "description": "Update plugin revisions in Nix files",
+      "fileMatch": ["^discourse-.*/default\\.nix$"],
+      "matchStrings": [
+        "rev\\s*=\\s*\"(?<currentValue>[a-f0-9]{40})\"[\\s\\S]*?owner\\s*=\\s*\"(?<depName>[^\"]+)\"[\\s\\S]*?repo\\s*=\\s*\"(?<packageName>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-commits",
+      "depNameTemplate": "{{{depName}}}/{{{packageName}}}"
+    }
+  ],
+  "postUpdateOptions": [
+    "nixpkgsOutOfDateCheck"
+  ],
+  "allowedPostUpgradeCommands": [
+    "^nix flake update$",
+    "^nix build \\.#default$",
+    "^\\./update\\.py",
+    "^\\./update_discourse_hub\\.py"
+  ],
+  "trustLevel": "high"
+}
