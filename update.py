@@ -202,14 +202,37 @@ def main():
 @click.option('--pretend', is_flag=True, help="Only show what would be done.")
 @click.option('--plugin-version-overrides', default="{}", 
               help="JSON string of plugin version overrides.")
-def update_plugins(version, pretend, plugin_version_overrides):
+@click.option('--check-hub-api', is_flag=True, help="Check Discourse Hub API before updating.")
+@click.option('--output-report', type=click.Path(), help="Output update report to JSON file.")
+def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, output_report):
+    """Update plugins to their latest revision."""
     from pprint import pprint
+    import json
+    
+    # Check Hub API if requested
+    if check_hub_api:
+        try:
+            result = subprocess.run(['./update_discourse_hub.py', 'check', '--check-only'], 
+                                  capture_output=True, text=True)
+            if result.returncode == 2:  # Critical updates available
+                logger.warning("Critical updates detected by Hub API")
+            elif result.returncode == 1:  # Updates available
+                logger.info("Updates available according to Hub API")
+        except Exception as e:
+            logger.warning(f"Failed to check Hub API: {e}")
 
     pprint(plugin_version_overrides)
 
     overridden_plugin_versions = ast.literal_eval(plugin_version_overrides)
-
-    """Update plugins to their latest revision."""
+    
+    # Initialize update report
+    update_report = {
+        'discourse_version': version,
+        'timestamp': str(Path().cwd()),
+        'plugins_updated': [],
+        'plugins_skipped': [],
+        'errors': []
+    }
     plugins = [
         {"name": "discourse-events", "owner": "paviliondev"},
         {"name": "discourse-landing-pages", "owner": "paviliondev"},
@@ -320,6 +343,11 @@ def update_plugins(version, pretend, plugin_version_overrides):
 
         if prev_commit_sha == rev:
             click.echo(f"Plugin {name} is already at the latest revision")
+            update_report['plugins_skipped'].append({
+                'name': name,
+                'reason': 'already_latest',
+                'current_rev': prev_commit_sha
+            })
             continue
 
         if not prev_commit_sha:
@@ -350,6 +378,15 @@ def update_plugins(version, pretend, plugin_version_overrides):
         click.echo(
             f"{update_prefix} {name}, {prev_commit_sha} -> {rev} in {filename}"
         )
+        
+        # Record update in report
+        update_report['plugins_updated'].append({
+            'name': name,
+            'old_rev': prev_commit_sha,
+            'new_rev': rev,
+            'filename': str(filename),
+            'pretend': pretend
+        })
 
         if pretend:
             continue
@@ -403,6 +440,12 @@ def update_plugins(version, pretend, plugin_version_overrides):
             )
             _remove_platforms(rubyenv_dir)
             subprocess.check_output(["bundix"], cwd=rubyenv_dir)
+
+    # Save update report if requested
+    if output_report:
+        with open(output_report, 'w') as f:
+            json.dump(update_report, f, indent=2)
+        click.echo(f"Update report saved to {output_report}")
 
 
 if __name__ == "__main__":
