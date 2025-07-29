@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#! nix-shell -i python3 -p bundix bundler nix-update nix-universal-prefetch python3 python3Packages.requests python3Packages.typer python3Packages.click-log prefetch-yarn-deps
+#! nix-shell -i python3 -p "python3.withPackages (ps: with ps; [ requests click click-log packaging ])" bundix bundler nix-update nurl
 from __future__ import annotations
 
 import ast
@@ -10,14 +10,13 @@ import stat
 import subprocess
 import tempfile
 import textwrap
-from distutils.version import LooseVersion
 from functools import total_ordering
-from itertools import zip_longest
+from packaging.version import Version
 from pathlib import Path
-from typing import Annotated, Union, Iterable
+from typing import Union, Iterable
 
+import click
 import click_log
-from typer import Typer, Option, echo
 import requests
 
 logger = logging.getLogger(__name__)
@@ -40,41 +39,22 @@ class DiscourseVersion:
 
     def __init__(self, version: str):
         """Take either a tag or version number, calculate the other."""
-        if version.startswith("v"):
+        if version.startswith('v'):
             self.tag = version
-            self.version = version.lstrip("v")
+            self.version = version.lstrip('v')
         else:
-            self.tag = "v" + version
+            self.tag = 'v' + version
             self.version = version
-        self.split_version = LooseVersion(self.version).version
+
+        self._version = Version(self.version)
 
     def __eq__(self, other: DiscourseVersion):
         """Versions are equal when their individual parts are."""
-        return self.split_version == other.split_version
+        return self._version == other._version
 
     def __gt__(self, other: DiscourseVersion):
-        """Check if this version is greater than the other.
-
-        Goes through the parts of the version numbers from most to
-        least significant, only continuing on to the next if the
-        numbers are equal and no decision can be made. If one version
-        ends in 'betaX' and the other doesn't, all else being equal,
-        the one without 'betaX' is considered greater, since it's the
-        release version.
-
-        """
-        for this_ver, other_ver in zip_longest(
-            self.split_version, other.split_version
-        ):
-            if this_ver == other_ver:
-                continue
-            if type(this_ver) is int and type(other_ver) is int:
-                return this_ver > other_ver
-            elif "beta" in [this_ver, other_ver]:
-                # release version (None) is greater than beta
-                return this_ver is None
-        else:
-            return False
+        """Check if this version is greater than the other."""
+        return self._version > other._version
 
     def __str__(self):
         return self.version
@@ -137,45 +117,92 @@ class DiscourseRepo:
 
 
 def _remove_platforms(rubyenv_dir: Path):
-    for platform in [
-        "arm64-darwin-20",
-        "x86_64-darwin-18",
-        "x86_64-darwin-19",
-        "x86_64-darwin-20",
-        "x86_64-linux",
-        "aarch64-linux",
-    ]:
-        with open(rubyenv_dir / "Gemfile.lock", "r") as f:
+    for platform in ['arm64-darwin-20', 'x86_64-darwin-18',
+                     'x86_64-darwin-19', 'x86_64-darwin-20',
+                     'x86_64-linux', 'aarch64-linux']:
+        with open(rubyenv_dir / 'Gemfile.lock', 'r') as f:
             for line in f:
                 if platform in line:
                     subprocess.check_output(
-                        ["bundle", "lock", "--remove-platform", platform],
-                        cwd=rubyenv_dir,
-                    )
+                        ['bundle', 'lock', '--remove-platform', platform], cwd=rubyenv_dir)
                     break
 
 
-app = Typer()
+def _parse_compatibility_line(line):
+    """Parse a compatibility line and return (operator, version, plugin_rev)"""
+    line = line.strip()
+    if not line:
+        return None
+    
+    # Split on colon to separate version spec from plugin rev
+    parts = line.split(':', 1)
+    if len(parts) != 2:
+        return None
+    
+    version_spec = parts[0].strip()
+    plugin_rev = parts[1].strip()
+    
+    # Parse operator and version
+    if version_spec.startswith('<='):
+        operator = '<='
+        version = version_spec[2:].strip()
+    elif version_spec.startswith('<'):
+        operator = '<'
+        version = version_spec[1:].strip()
+    else:
+        # No explicit operator means implicit <=
+        operator = '<='
+        version = version_spec
+    
+    return (operator, DiscourseVersion(version), plugin_rev)
+
+
+def _get_compatible_plugin_revision(repo, repo_latest_commit, discourse_version):
+    """Get the compatible plugin revision based on discourse-compatibility file."""
+    try:
+        compatibility_spec = repo.get_file('.discourse-compatibility', repo_latest_commit)
+        
+        # Parse all compatibility lines
+        parsed_versions = []
+        for line in compatibility_spec.splitlines():
+            parsed = _parse_compatibility_line(line)
+            if parsed:
+                parsed_versions.append(parsed)
+        
+        # Find compatible versions based on operators
+        # The logic: if discourse_version matches the constraint, use the pinned plugin_rev
+        # Otherwise, use latest commit
+        compatible_versions = []
+        for operator, version, plugin_rev in parsed_versions:
+            if operator == '<=' and discourse_version <= version:
+                compatible_versions.append((version, plugin_rev))
+            elif operator == '<' and discourse_version < version:
+                compatible_versions.append((version, plugin_rev))
+        
+        if compatible_versions == []:
+            return repo_latest_commit
+        else:
+            # Sort by version and take the lowest compatible version (most restrictive constraint)
+            compatible_versions.sort(key=lambda x: x[0], reverse=False)
+            rev = compatible_versions[0][1]
+            return rev
+    except requests.exceptions.HTTPError:
+        return repo_latest_commit
 
 
 @click_log.simple_verbosity_option(logger)
-@app.callback()
+@click.group()
 def main():
     pass
 
 
-@app.command()
-def update_plugins(
-    version: str = Option(
-        Path("discourse_version").read_text().strip(),
-        help="Discourse version to get plugins for.",
-    ),
-    pretend: bool = Option(
-        False,
-        help="Only show what would be done.",
-    ),
-    plugin_version_overrides: Annotated[str, Option()] = "{}",
-):
+@main.command()
+@click.option('--version', default=lambda: Path("discourse_version").read_text().strip(), 
+              help="Discourse version to get plugins for.")
+@click.option('--pretend', is_flag=True, help="Only show what would be done.")
+@click.option('--plugin-version-overrides', default="{}", 
+              help="JSON string of plugin version overrides.")
+def update_plugins(version, pretend, plugin_version_overrides):
     from pprint import pprint
 
     pprint(plugin_version_overrides)
@@ -197,10 +224,12 @@ def update_plugins(
     ]
 
     if pretend:
-        echo("Only showing what would be done (--pretend is set):")
+        click.echo("Only showing what would be done (--pretend is set):")
+
+    discourse_version = DiscourseVersion(version)
 
     for plugin in plugins:
-        echo(f"Checking plugin {plugin}...")
+        click.echo(f"Checking plugin {plugin}...")
         fetcher = plugin.get("fetcher") or "fetchFromGitHub"
         owner = plugin.get("owner") or "discourse"
         name = plugin.get("name")
@@ -215,51 +244,8 @@ def update_plugins(
         rev = overridden_plugin_versions.get(name)
 
         if rev is None:
-            try:
-                compatibility_spec = repo.get_file(
-                    ".discourse-compatibility", repo.latest_commit_sha
-                )
-                versions = []
-                for line in compatibility_spec.splitlines():
-                    if not line.strip():
-                        continue
-                    # Split into operator+version and revision
-                    operator_part, plugin_rev = line.split(":", 1)
-                    plugin_rev = plugin_rev.strip()
-                    
-                    # Parse operator and version (default to <= if no operator)
-                    if operator_part.startswith("<="):
-                        op = "<="
-                        discourse_version_str = operator_part[2:].strip()
-                    elif operator_part.startswith("<"):
-                        op = "<"
-                        discourse_version_str = operator_part[1:].strip()
-                    else:  # legacy format
-                        op = "<="
-                        discourse_version_str = operator_part.strip()
-
-                    versions.append(
-                        (op, DiscourseVersion(discourse_version_str), plugin_rev)
-                    )
-
-                discourse_version = DiscourseVersion(version)
-                
-                # Filter versions where the discourse_version satisfies the constraint
-                compatible_versions = []
-                for op, spec_version, rev in versions:
-                    if op == "<" and discourse_version < spec_version:
-                        compatible_versions.append((spec_version, rev))
-                    elif op == "<=" and discourse_version <= spec_version:
-                        compatible_versions.append((spec_version, rev))
-                
-                # Get highest compatible version
-                compatible_versions.sort(reverse=True, key=lambda x: x[0])
-                if not versions:
-                    rev = repo.latest_commit_sha
-                else:
-                    rev = versions[0][1]
-            except requests.exceptions.HTTPError:
-                rev = repo.latest_commit_sha
+            repo_latest_commit = repo.latest_commit_sha
+            rev = _get_compatible_plugin_revision(repo, repo_latest_commit, discourse_version)
 
         print(f"Using revision {rev} for plugin {name}")
 
@@ -333,33 +319,35 @@ def update_plugins(
                     prev_hash = line.split("=")[1].strip('"; \n')
 
         if prev_commit_sha == rev:
-            echo(f"Plugin {name} is already at the latest revision")
+            click.echo(f"Plugin {name} is already at the latest revision")
             continue
 
         if not prev_commit_sha:
-            echo(f"Plugin file {filename} invalid: commit id not found")
+            click.echo(f"Plugin file {filename} invalid: commit id not found")
             continue
 
         if not prev_hash:
-            echo(f"Plugin file {filename} invalid: hash not found")
+            click.echo(f"Plugin file {filename} invalid: hash not found")
             continue
+
+        if fetcher == "fetchFromGitHub":
+            url = f"https://github.com/{owner}/{repo_name}"
+        else:
+            raise NotImplementedError(f"Missing URL pattern for {fetcher}")
 
         new_hash = subprocess.check_output(
             [
-                "nix-universal-prefetch",
-                fetcher,
-                "--owner",
-                owner,
-                "--repo",
-                repo_name,
-                "--rev",
+                "nurl",
+                "--fetcher", fetcher,
+                "--hash",
+                url,
                 rev,
             ],
             text=True,
         ).strip("\n")
 
         update_prefix = "Would update" if pretend else "Update"
-        echo(
+        click.echo(
             f"{update_prefix} {name}, {prev_commit_sha} -> {rev} in {filename}"
         )
 
@@ -418,4 +406,4 @@ def update_plugins(
 
 
 if __name__ == "__main__":
-    app()
+    main()
