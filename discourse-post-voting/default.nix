@@ -1,10 +1,10 @@
 { lib, mkDiscoursePlugin, fetchFromGitHub }:
 
 mkDiscoursePlugin {
-  name = "discourse-question-answer";
+  name = "discourse-post-voting";
   src = fetchFromGitHub {
     owner = "discourse";
-    repo = "discourse-question-answer";
+    repo = "discourse-post-voting";
     rev = "3267054820b70b6095f586db699a8c4d575d59f8";
     sha256 = "sha256-Oirw/dchezORTEMqZaaSseMpCuntgnGZbuDAmJk1A3U==========";
   };

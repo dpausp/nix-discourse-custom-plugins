@@ -236,7 +236,7 @@ def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, ou
     plugins = [
         {"name": "discourse-events", "owner": "paviliondev"},
         {"name": "discourse-landing-pages", "owner": "paviliondev"},
-        {"name": "discourse-question-answer"},
+        {"name": "discourse-post-voting"},
         {"name": "discourse-restricted-replies"},
         {"name": "discourse-rss-polling"},
         {"name": "discourse-shared-edits"},
