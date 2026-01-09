@@ -39,13 +39,14 @@ class DiscourseVersion:
 
     def __init__(self, version: str):
         """Take either a tag or version number, calculate the other."""
-        if version.startswith('v'):
+        if version.startswith("v"):
             self.tag = version
-            self.version = version.lstrip('v')
+            self.version = version.lstrip("v")
         else:
-            self.tag = 'v' + version
+            self.tag = "v" + version
             self.version = version
 
+        self.version = self.version.replace("-latest", "")
         self._version = Version(self.version)
 
     def __eq__(self, other: DiscourseVersion):
@@ -117,14 +118,21 @@ class DiscourseRepo:
 
 
 def _remove_platforms(rubyenv_dir: Path):
-    for platform in ['arm64-darwin-20', 'x86_64-darwin-18',
-                     'x86_64-darwin-19', 'x86_64-darwin-20',
-                     'x86_64-linux', 'aarch64-linux']:
-        with open(rubyenv_dir / 'Gemfile.lock', 'r') as f:
+    for platform in [
+        "arm64-darwin-20",
+        "x86_64-darwin-18",
+        "x86_64-darwin-19",
+        "x86_64-darwin-20",
+        "x86_64-linux",
+        "aarch64-linux",
+    ]:
+        with open(rubyenv_dir / "Gemfile.lock", "r") as f:
             for line in f:
                 if platform in line:
                     subprocess.check_output(
-                        ['bundle', 'lock', '--remove-platform', platform], cwd=rubyenv_dir)
+                        ["bundle", "lock", "--remove-platform", platform],
+                        cwd=rubyenv_dir,
+                    )
                     break
 
 
@@ -133,52 +141,54 @@ def _parse_compatibility_line(line):
     line = line.strip()
     if not line:
         return None
-    
+
     # Split on colon to separate version spec from plugin rev
-    parts = line.split(':', 1)
+    parts = line.split(":", 1)
     if len(parts) != 2:
         return None
-    
+
     version_spec = parts[0].strip()
     plugin_rev = parts[1].strip()
-    
+
     # Parse operator and version
-    if version_spec.startswith('<='):
-        operator = '<='
+    if version_spec.startswith("<="):
+        operator = "<="
         version = version_spec[2:].strip()
-    elif version_spec.startswith('<'):
-        operator = '<'
+    elif version_spec.startswith("<"):
+        operator = "<"
         version = version_spec[1:].strip()
     else:
         # No explicit operator means implicit <=
-        operator = '<='
+        operator = "<="
         version = version_spec
-    
+
     return (operator, DiscourseVersion(version), plugin_rev)
 
 
 def _get_compatible_plugin_revision(repo, repo_latest_commit, discourse_version):
     """Get the compatible plugin revision based on discourse-compatibility file."""
     try:
-        compatibility_spec = repo.get_file('.discourse-compatibility', repo_latest_commit)
-        
+        compatibility_spec = repo.get_file(
+            ".discourse-compatibility", repo_latest_commit
+        )
+
         # Parse all compatibility lines
         parsed_versions = []
         for line in compatibility_spec.splitlines():
             parsed = _parse_compatibility_line(line)
             if parsed:
                 parsed_versions.append(parsed)
-        
+
         # Find compatible versions based on operators
         # The logic: if discourse_version matches the constraint, use the pinned plugin_rev
         # Otherwise, use latest commit
         compatible_versions = []
         for operator, version, plugin_rev in parsed_versions:
-            if operator == '<=' and discourse_version <= version:
+            if operator == "<=" and discourse_version <= version:
                 compatible_versions.append((version, plugin_rev))
-            elif operator == '<' and discourse_version < version:
+            elif operator == "<" and discourse_version < version:
                 compatible_versions.append((version, plugin_rev))
-        
+
         if compatible_versions == []:
             return repo_latest_commit
         else:
@@ -197,23 +207,38 @@ def main():
 
 
 @main.command()
-@click.option('--version', default=lambda: Path("discourse_version").read_text().strip(), 
-              help="Discourse version to get plugins for.")
-@click.option('--pretend', is_flag=True, help="Only show what would be done.")
-@click.option('--plugin-version-overrides', default="{}", 
-              help="JSON string of plugin version overrides.")
-@click.option('--check-hub-api', is_flag=True, help="Check Discourse Hub API before updating.")
-@click.option('--output-report', type=click.Path(), help="Output update report to JSON file.")
-def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, output_report):
+@click.option(
+    "--version",
+    default=lambda: Path("discourse_version").read_text().strip(),
+    help="Discourse version to get plugins for.",
+)
+@click.option("--pretend", is_flag=True, help="Only show what would be done.")
+@click.option(
+    "--plugin-version-overrides",
+    default="{}",
+    help="JSON string of plugin version overrides.",
+)
+@click.option(
+    "--check-hub-api", is_flag=True, help="Check Discourse Hub API before updating."
+)
+@click.option(
+    "--output-report", type=click.Path(), help="Output update report to JSON file."
+)
+def update_plugins(
+    version, pretend, plugin_version_overrides, check_hub_api, output_report
+):
     """Update plugins to their latest revision."""
     from pprint import pprint
     import json
-    
+
     # Check Hub API if requested
     if check_hub_api:
         try:
-            result = subprocess.run(['./update_discourse_hub.py', 'check', '--check-only'], 
-                                  capture_output=True, text=True)
+            result = subprocess.run(
+                ["./update_discourse_hub.py", "check", "--check-only"],
+                capture_output=True,
+                text=True,
+            )
             if result.returncode == 2:  # Critical updates available
                 logger.warning("Critical updates detected by Hub API")
             elif result.returncode == 1:  # Updates available
@@ -224,14 +249,14 @@ def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, ou
     pprint(plugin_version_overrides)
 
     overridden_plugin_versions = ast.literal_eval(plugin_version_overrides)
-    
+
     # Initialize update report
     update_report = {
-        'discourse_version': version,
-        'timestamp': str(Path().cwd()),
-        'plugins_updated': [],
-        'plugins_skipped': [],
-        'errors': []
+        "discourse_version": version,
+        "timestamp": str(Path().cwd()),
+        "plugins_updated": [],
+        "plugins_skipped": [],
+        "errors": [],
     }
     plugins = [
         {"name": "discourse-events", "owner": "paviliondev"},
@@ -268,7 +293,9 @@ def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, ou
 
         if rev is None:
             repo_latest_commit = repo.latest_commit_sha
-            rev = _get_compatible_plugin_revision(repo, repo_latest_commit, discourse_version)
+            rev = _get_compatible_plugin_revision(
+                repo, repo_latest_commit, discourse_version
+            )
 
         print(f"Using revision {rev} for plugin {name}")
 
@@ -290,9 +317,7 @@ def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, ou
                             {{ lib, mkDiscoursePlugin, fetchFromGitHub }}:
 
                             mkDiscoursePlugin {{
-                            name = "{name}";"""[
-                            1:
-                        ]
+                            name = "{name}";"""[1:]
                         + (
                             """
                             bundlerEnvArgs.gemdir = ./.;"""
@@ -343,11 +368,13 @@ def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, ou
 
         if prev_commit_sha == rev:
             click.echo(f"Plugin {name} is already at the latest revision")
-            update_report['plugins_skipped'].append({
-                'name': name,
-                'reason': 'already_latest',
-                'current_rev': prev_commit_sha
-            })
+            update_report["plugins_skipped"].append(
+                {
+                    "name": name,
+                    "reason": "already_latest",
+                    "current_rev": prev_commit_sha,
+                }
+            )
             continue
 
         if not prev_commit_sha:
@@ -366,7 +393,8 @@ def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, ou
         new_hash = subprocess.check_output(
             [
                 "nurl",
-                "--fetcher", fetcher,
+                "--fetcher",
+                fetcher,
                 "--hash",
                 url,
                 rev,
@@ -375,18 +403,18 @@ def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, ou
         ).strip("\n")
 
         update_prefix = "Would update" if pretend else "Update"
-        click.echo(
-            f"{update_prefix} {name}, {prev_commit_sha} -> {rev} in {filename}"
-        )
-        
+        click.echo(f"{update_prefix} {name}, {prev_commit_sha} -> {rev} in {filename}")
+
         # Record update in report
-        update_report['plugins_updated'].append({
-            'name': name,
-            'old_rev': prev_commit_sha,
-            'new_rev': rev,
-            'filename': str(filename),
-            'pretend': pretend
-        })
+        update_report["plugins_updated"].append(
+            {
+                "name": name,
+                "old_rev": prev_commit_sha,
+                "new_rev": rev,
+                "filename": str(filename),
+                "pretend": pretend,
+            }
+        )
 
         if pretend:
             continue
@@ -401,9 +429,7 @@ def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, ou
 
         rubyenv_dir = Path(filename).parent
         gemfile = rubyenv_dir / "Gemfile"
-        version_file_regex = re.compile(
-            r'.*File\.expand_path\("\.\./(.*)", __FILE__\)'
-        )
+        version_file_regex = re.compile(r'.*File\.expand_path\("\.\./(.*)", __FILE__\)')
         gemfile_text = ""
         for line in repo.get_file("plugin.rb", rev).splitlines():
             if "gem " in line:
@@ -435,15 +461,13 @@ def update_plugins(version, pretend, plugin_version_overrides, check_hub_api, ou
             subprocess.check_output(
                 ["bundle", "lock", "--add-platform", "ruby"], cwd=rubyenv_dir
             )
-            subprocess.check_output(
-                ["bundle", "lock", "--update"], cwd=rubyenv_dir
-            )
+            subprocess.check_output(["bundle", "lock", "--update"], cwd=rubyenv_dir)
             _remove_platforms(rubyenv_dir)
             subprocess.check_output(["bundix"], cwd=rubyenv_dir)
 
     # Save update report if requested
     if output_report:
-        with open(output_report, 'w') as f:
+        with open(output_report, "w") as f:
             json.dump(update_report, f, indent=2)
         click.echo(f"Update report saved to {output_report}")
 
